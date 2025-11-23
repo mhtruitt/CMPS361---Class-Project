@@ -1,0 +1,6 @@
+When attempting to preview this page, among all others in my class project, XAMPP would not work.
+I tried everything from downloading a different version to consulting ChatGPT to troubleshoot, and
+nothing would work. When initially working on this project, everything was working perfectly fine,
+but I haven't been able to preview any pages in about a week. I ran all my code through PHPStan to
+ensure it had the best chance of being correct, since I'm flying blind. If anyone knows what I can
+do to fix this, I would really appreciate it!
