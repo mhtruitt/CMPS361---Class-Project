@@ -1,0 +1,180 @@
+<?php
+session_start();
+
+// ---- ARTIST DATA ----
+$artists = [
+    "taylor swift" => [
+        "genre" => "Pop / Country",
+        "albums" => 10,
+        "popular_song" => "Shake It Off"
+    ],
+    "kendrick lamar" => [
+        "genre" => "Hip-Hop / Rap",
+        "albums" => 5,
+        "popular_song" => "HUMBLE."
+    ],
+    "billie eilish" => [
+        "genre" => "Alternative / Pop",
+        "albums" => 2,
+        "popular_song" => "Bad Guy"
+    ],
+    "sleep token" => [
+        "genre" => "Alternative Metal",
+        "albums" => 3,
+        "popular_song" => "The Summoning"
+    ],
+    "tame impala" => [
+        "genre" => "Psychedelic Pop / Rock",
+        "albums" => 4,
+        "popular_song" => "The Less I Know the Better"
+    ]
+];
+
+// ---- CHAT HISTORY ----
+if (!isset($_SESSION['chat'])) {
+    $_SESSION['chat'] = [];
+    $_SESSION['chat'][] = [
+        "sender" => "Bot",
+        "message" => "Welcome! Ask me about Taylor Swift, Kendrick Lamar, Billie Eilish, Sleep Token, or Tame Impala."
+    ];
+}
+
+// ---- Find artist inside user text ----
+function getArtistFromInput($input, $artists) {
+    $input = strtolower($input);
+    foreach ($artists as $name => $data) {
+        if (strpos($input, $name) !== false) {
+            return $name;
+        }
+    }
+    return null;
+}
+
+// ---- Handle user message ----
+if (isset($_SERVER["REQUEST_METHOD"]) && $_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["message"])) {
+
+    $userInput = trim($_POST["message"]);
+
+    if ($userInput !== "") {
+
+        // Store in chat history
+        $_SESSION['chat'][] = ["sender" => "You", "message" => htmlspecialchars($userInput)];
+
+        $lower = strtolower($userInput);
+        $artist = getArtistFromInput($lower, $artists);
+
+        // Decide bot response
+        if ($artist === null) {
+            $response = "I'm not familiar with that artist. Try one of these: Taylor Swift, Kendrick Lamar, Billie Eilish, Sleep Token, Tame Impala.";
+        } else {
+            $data = $artists[$artist];
+
+            if (strpos($lower, "genre") !== false) {
+                $response = ucfirst($artist) . " is known for: <strong>{$data['genre']}</strong>.";
+            }
+            elseif (strpos($lower, "album") !== false) {
+                $response = ucfirst($artist) . " has <strong>{$data['albums']}</strong> album(s).";
+            }
+            elseif (strpos($lower, "popular song") !== false || strpos($lower, "biggest song") !== false) {
+                $response = "The most popular song by " . ucfirst($artist) . " is <strong>{$data['popular_song']}</strong>.";
+            }
+            else {
+                $response = "I understand the artist, but not the question. Try asking about genre, album count, or popular song.";
+            }
+        }
+
+        // Save bot reply
+        $_SESSION['chat'][] = ["sender" => "Bot", "message" => $response];
+    }
+
+    // Redirect to avoid form resubmission
+    header("Location: " . $_SERVER['PHP_SELF']);
+    exit;
+}
+
+?>
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Music Trivia Chatbot</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #ececec;
+            margin: 0;
+            padding: 20px;
+        }
+        .chat-container {
+            background: #fff;
+            max-width: 600px;
+            margin: auto;
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #bbb;
+            box-shadow: 0 0 10px #ccc;
+        }
+        .chat-window {
+            height: 350px;
+            overflow-y: auto;
+            border: 1px solid #aaa;
+            padding: 10px;
+            background: #fafafa;
+            border-radius: 6px;
+        }
+        .message {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 6px;
+            max-width: 80%;
+        }
+        .bot { background: #e1f0ff; border-left: 4px solid #2a6ac5; }
+        .you { background: #d9ffd9; border-right: 4px solid #2ca52c; margin-left: auto; }
+        form { margin-top: 15px; display: flex; gap: 10px; }
+        input[type=text] {
+            flex: 1;
+            padding: 12px;
+            font-size: 16px;
+        }
+        button {
+            padding: 12px 18px;
+            font-size: 16px;
+            cursor: pointer;
+            background: #2a6ac5;
+            color: white;
+            border: none;
+            border-radius: 6px;
+        }
+        button:hover { background: #1d4e91; }
+    </style>
+</head>
+
+<body>
+<div class="chat-container">
+    <h2>Music Trivia Chatbot</h2>
+    <div class="chat-window">
+
+        <?php foreach ($_SESSION['chat'] as $entry): ?>
+            <div class="message <?= strtolower($entry['sender']) === 'bot' ? 'bot' : 'you' ?>">
+                <strong><?= $entry['sender'] ?>:</strong><br>
+                <?= $entry['message'] ?>
+            </div>
+        <?php endforeach; ?>
+
+    </div>
+
+    <form method="POST">
+        <input type="text" name="message" placeholder="Ask me something..." required>
+        <button type="submit">Send</button>
+    </form>
+</div>
+
+<script>
+// Auto-scroll chat window to bottom
+let chatWindow = document.querySelector(".chat-window");
+chatWindow.scrollTop = chatWindow.scrollHeight;
+</script>
+
+</body>
+</html>
